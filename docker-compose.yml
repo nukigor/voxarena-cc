@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: voxarena-postgres
+    restart: unless-stopped
+    ports:
+      - "54320:5432"
+    environment:
+      POSTGRES_USER: voxarena
+      POSTGRES_PASSWORD: voxarena_dev_password
+      POSTGRES_DB: voxarena_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voxarena -d voxarena_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local

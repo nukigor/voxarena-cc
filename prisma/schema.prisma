@@ -1,0 +1,387 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// TAXONOMY SYSTEM
+// ============================================================================
+
+model TaxonomyCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String   @db.Text
+  fieldType   FieldType
+  isMandatory Boolean  @default(false)
+  promptWeight Int     @default(5) // 1-10 scale for AI prompt influence
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  terms       TaxonomyTerm[]
+
+  @@index([slug])
+  @@map("taxonomy_categories")
+}
+
+model TaxonomyTerm {
+  id          String   @id @default(cuid())
+  categoryId  String
+  name        String
+  slug        String
+  description String   @db.Text
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category    TaxonomyCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  personaValues PersonaTaxonomyValue[]
+
+  @@unique([categoryId, slug])
+  @@index([categoryId])
+  @@index([slug])
+  @@map("taxonomy_terms")
+}
+
+enum FieldType {
+  SINGLE_SELECT
+  MULTI_SELECT
+  SLIDER
+  TEXT
+}
+
+// ============================================================================
+// PERSONAS
+// ============================================================================
+
+model Persona {
+  id              String   @id @default(cuid())
+  name            String
+  nickname        String?
+  avatarUrl       String?
+  teaser          String?  @db.Text
+  description     String?  @db.Text
+  professionRole  String?  @db.Text
+  quirks          String?  @db.Text
+  status          PersonaStatus @default(DRAFT)
+  createdBy       String?  // User ID (future implementation)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  taxonomyValues  PersonaTaxonomyValue[]
+  debateParticipations DebateParticipant[]
+
+  @@index([status])
+  @@index([createdBy])
+  @@map("personas")
+}
+
+model PersonaTaxonomyValue {
+  id          String   @id @default(cuid())
+  personaId   String
+  termId      String
+  createdAt   DateTime @default(now())
+
+  persona     Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  term        TaxonomyTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@unique([personaId, termId])
+  @@index([personaId])
+  @@index([termId])
+  @@map("persona_taxonomy_values")
+}
+
+enum PersonaStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+// ============================================================================
+// DEBATES
+// ============================================================================
+
+model Mode {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  teaser      String?  @db.Text
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  debates     Debate[]
+
+  @@index([slug])
+  @@map("debate_modes")
+}
+
+model FormatTemplate {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  description     String   @db.Text
+  category        FormatCategory
+  mode            DebateMode @default(DEBATE)
+  isPreset        Boolean  @default(false)
+  minParticipants Int
+  maxParticipants Int
+  requiresModerator Boolean @default(false)
+  allowsDocumentUpload Boolean @default(false)  // Allow document uploads for this format
+  durationMinutes Int      // Default/suggested duration
+  flexibleTiming  Boolean  @default(true)
+  segmentStructure Json    // Array of segment definitions
+  bestFor         String?  @db.Text
+  personaRecommendations String? @db.Text
+  createdBy       String?  // User ID (future implementation)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  debates         Debate[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([mode])
+  @@index([isPreset])
+  @@map("format_templates")
+}
+
+model Debate {
+  id                  String   @id @default(cuid())
+  title               String
+  slug                String   @unique
+  topic               String   @db.Text
+  modeId              String   // Relation to Mode model (required)
+  formatTemplateId    String?
+  description         String?  @db.Text
+  segmentStructure    Json?    // Customized segment structure (overrides template)
+  totalDurationMinutes Int?
+  flexibleTiming      Boolean  @default(true)
+  // Participant constraints (for custom debates without template)
+  minParticipants     Int      @default(2)
+  maxParticipants     Int      @default(10)
+  requiresModerator   Boolean  @default(false)
+  transcript          String?  @db.Text
+  audioUrl            String?
+  duration            Int?     // Actual duration in seconds (after generation)
+  // Document fields for Expert Review Panel
+  reviewDocumentUrl   String?  // URL to document in R2 bucket
+  reviewDocumentName  String?  // Original filename
+  reviewDocumentSize  Int?     // File size in bytes
+  reviewDocumentType  String?  // MIME type
+  status              DebateStatus @default(DRAFT)
+  generationStartedAt DateTime?
+  generationCompletedAt DateTime?
+  errorMessage        String?  @db.Text
+  createdBy           String?  // User ID (future implementation)
+  publishedAt         DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  debateMode      Mode @relation(fields: [modeId], references: [id], onDelete: Restrict)
+  formatTemplate  FormatTemplate? @relation(fields: [formatTemplateId], references: [id], onDelete: SetNull)
+  participants    DebateParticipant[]
+  segments        DebateSegment[]
+  analytics       DebateAnalytics?
+
+  @@index([status])
+  @@index([modeId])
+  @@index([slug])
+  @@index([formatTemplateId])
+  @@index([createdBy])
+  @@index([publishedAt])
+  @@map("debates")
+}
+
+model DebateParticipant {
+  id            String   @id @default(cuid())
+  debateId      String
+  personaId     String
+  role          ParticipantRole
+  speakingOrder Int?     // Order in which participants speak (1, 2, 3...)
+  createdAt     DateTime @default(now())
+
+  debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  persona   Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@unique([debateId, personaId])
+  @@index([debateId])
+  @@index([personaId])
+  @@map("debate_participants")
+}
+
+model DebateSegment {
+  id          String   @id @default(cuid())
+  debateId    String
+  segmentKey  String   // Matches key in segmentStructure
+  title       String
+  orderIndex  Int
+  content     String?  @db.Text // Generated dialogue content
+  audioUrl    String?
+  duration    Int?     // Duration in seconds
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  debate      Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
+
+  @@unique([debateId, segmentKey])
+  @@index([debateId])
+  @@index([orderIndex])
+  @@map("debate_segments")
+}
+
+enum DebateMode {
+  DEBATE
+  PODCAST
+}
+
+enum FormatCategory {
+  ACADEMIC
+  PROFESSIONAL
+  CASUAL
+  CULTURAL
+}
+
+enum DebateStatus {
+  DRAFT
+  GENERATING
+  COMPLETED
+  FAILED
+  PUBLISHED
+}
+
+enum ParticipantRole {
+  DEBATER
+  MODERATOR
+  JUDGE
+  EXPERT
+  HOST
+}
+
+// ============================================================================
+// ANALYTICS
+// ============================================================================
+
+model DebateAnalytics {
+  id              String   @id @default(cuid())
+  debateId        String   @unique
+  viewCount       Int      @default(0)
+  playCount       Int      @default(0)
+  completionCount Int      @default(0)
+  avgCompletionRate Float  @default(0)
+  lastViewedAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  debate          Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
+
+  @@index([debateId])
+  @@map("debate_analytics")
+}
+
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  debateId    String?
+  personaId   String?
+  eventType   EventType
+  metadata    Json?
+  userAgent   String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([debateId])
+  @@index([personaId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+enum EventType {
+  DEBATE_VIEW
+  DEBATE_PLAY
+  DEBATE_COMPLETE
+  DEBATE_SHARE
+  PERSONA_VIEW
+}
+
+// ============================================================================
+// AI PROMPT LOGS
+// ============================================================================
+
+model AiPromptLog {
+  id                  String   @id @default(cuid())
+
+  // Prompt metadata
+  functionality       String   // e.g., "Persona Avatar Generation"
+  parentModel         String   // e.g., "Persona", "Debate"
+  parentObjectId      String   // ID of the parent object
+  parentObjectName    String   // Name of parent object for display
+  parentObjectSlug    String?  // Slug if applicable
+
+  // AI execution details
+  aiModel             String   // e.g., "gpt-4o", "dall-e-3"
+  prompt              String   @db.Text // Full prompt sent to AI
+  promptExplanation   String   @db.Text // Human-readable explanation
+  result              String   @db.Text // Raw AI response
+
+  // Execution metrics
+  status              AiPromptStatus @default(SUCCESS)
+  executionTimeMs     Int?     // Duration in milliseconds
+  tokenUsage          Int?     // Tokens used (if available)
+  estimatedCost       Float?   // Cost in USD (if calculable)
+  errorMessage        String?  @db.Text
+
+  // Audit trail
+  createdAt           DateTime @default(now())
+  createdBy           String?  // Future: User ID who triggered
+
+  @@index([functionality])
+  @@index([parentModel])
+  @@index([parentObjectId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("ai_prompt_logs")
+}
+
+enum AiPromptStatus {
+  SUCCESS
+  FAILED
+  PARTIAL
+}
+
+// ============================================================================
+// USERS (Future Implementation)
+// ============================================================================
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  role            UserRole @default(USER)
+  subscriptionTier SubscriptionTier @default(FREE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  PREMIUM
+}

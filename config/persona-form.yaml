@@ -1,0 +1,298 @@
+pages:
+  - id: basic-info
+    title: "Identity"
+    description: "Defines the persona’s core identity — who they are and how they’re addressed."
+    fieldGroups:
+      - id: identity
+        title: "Identity"
+        description: ""
+        fields:
+          - source: persona_table
+            name: name
+            label: "Full Name"
+            type: text
+            mandatory: true
+            helperText: "The persona's full name"
+            validation:
+              minLength: 2
+              maxLength: 100
+          - source: persona_table
+            name: nickname
+            label: "Nickname"
+            type: text
+            mandatory: false
+            helperText: "Optional nickname or alias"
+            validation:
+              maxLength: 50
+          - source: persona_table
+            name: avatarUrl
+            label: "Avatar"
+            type: avatar
+            mandatory: false
+            description: "AI-generated avatar based on persona characteristics"     
+          - source: persona_taxonomy
+            name: age-group
+            label: "Age group"
+            type: single_select
+            mandatory: true
+            helperText: "Defines the persona’s life-stage perspective and generational context."
+          - source: persona_taxonomy
+            name: gender-identity
+            label: "Gender Identity"
+            type: single_select
+            mandatory: true
+            helperText: "Defines the persona’s lived relationship to gender and its influence on perspective."
+          - source: persona_taxonomy
+            name: pronoun
+            label: "Pronoun"
+            type: single_select
+            mandatory: true
+            helperText: "Defines how the persona is referred to and expresses identity in language."
+  - id: background
+    title: "Background"
+    description: "Captures the persona’s learning, career path, and field expertise."
+    fieldGroups:
+      - id: learning
+        title: "Learning"
+        description: ""
+        fields:
+          - source: persona_taxonomy
+            name: university
+            label: "University"
+            type: multi_select
+            mandatory: false
+            helperText: "Captures how academic background shapes the persona’s reasoning and debate style."  
+      - id: professional
+        title: "Professional Background"
+        description: ""   
+        fields:
+          - source: persona_taxonomy
+            name: employer-type
+            label: "Employer Type"
+            type: multi_select
+            mandatory: false
+            helperText: "To add" 
+          - source: persona_table
+            name: professionRole
+            label: "Profession/Role"
+            type: textarea
+            mandatory: false
+            helperText: "Defines how the persona’s profession shapes their reasoning and debate approach."
+            validation:
+             maxLength: 2000
+  - id: personality
+    title: "Personality"
+    description: "Outlines temperament, confidence, and emotional patterns in debate."
+    fieldGroups:
+      - id: personality-traits
+        title: "Personality traits"
+        description: "To add"
+        fields:
+          - source: persona_taxonomy
+            name: archetypes
+            label: "Archetypes"
+            type: multi_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: temperament
+            label: "Temperament"
+            type: multi_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: confidence
+            label: "Confidence"
+            type: slider
+            mandatory: true
+            helperText: "To add."
+      - id: cultural-background
+        title: "Cultural background"
+        description: "To add"
+        fields:
+          - source: persona_taxonomy
+            name: region
+            label: "Region"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: culture
+            label: "Culture"
+            type: multi_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: community-type
+            label: "Community type"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+      - id: beliefs-worldview
+        title: "Beliefs and worldview"
+        description: "To add"
+        fields:
+          - source: persona_taxonomy
+            name: political-orientation
+            label: "Political orientation"
+            type: multi_select
+            mandatory: false
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: religion-spirituality
+            label: "Religion/Spirituality"
+            type: single_select
+            mandatory: false
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: philosophical-stance
+            label: "Philosophical stance"
+            type: multi_select
+            mandatory: false
+            helperText: "To add."
+  - id: debate-communication-style
+    title: "Debate and Communication Style"
+    description: "Describes how the persona argues, collaborates, and handles conflict."
+    fieldGroups:
+      - id: debate-style
+        title: "Debate style"
+        fields:
+          - source: persona_taxonomy
+            name: debate-approach
+            label: "Debate approach"
+            type: multi_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: conflict-style
+            label: "Conflict style"
+            type: multi_select
+            mandatory: true
+            helperText: "To add."
+      - id: communication-style
+        title: "Communication style"
+        fields:
+          - source: persona_taxonomy
+            name: vocabulary
+            label: "Vocabulary"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: verbosity
+            label: "Verbosity"
+            type: slider
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: tone
+            label: "Tone"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: accent-dialect
+            label: "Accent / Dialect"
+            type: single_select
+            mandatory: false
+            helperText: "To add."
+  - id: quirks
+    title: "Quirks"
+    description: "Adds distinctive traits or habits that make the persona feel human."
+    fieldGroups:
+      - id: quirks-habits
+        title: "Quirks and habits"
+        fields:
+          - source: persona_table
+            name: quirks
+            label: "Quirks"
+            type: textarea
+            mandatory: false
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: filler-phrases
+            label: "Filler phrases"
+            type: multi_select
+            mandatory: false
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: preferred-metaphors
+            label: "Preferred metaphors"
+            type: multi_select
+            mandatory: false
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: debate-habits
+            label: "Debate habits"
+            type: multi_select
+            mandatory: false
+            helperText: "To add."
+  - id: voice-emotion
+    title: "Voice style and emotion"
+    description: "To add"
+    fieldGroups:
+      - id: voice
+        title: "To add"
+        fields:
+          - source: persona_taxonomy
+            name: voice-pitch
+            label: "Voice pitch"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: voice-speed-rate
+            label: "Voice Speed / Rate"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: voice-volume-gain
+            label: "Voice Volume / Gain"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: voice-timbre
+            label: "Voice Timbre"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: voice-tone-mood
+            label: "Voice Tone / Mood"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: voice-energy-intensity
+            label: "Voice Energy / Intensity"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+          - source: persona_taxonomy
+            name: voice-formality
+            label: "Voice Formality"
+            type: single_select
+            mandatory: true
+            helperText: "To add."
+  - id: settings
+    title: "Settings"
+    description: "Persona status and metadata"
+    fieldGroups:
+      - id: meta
+        title: "Meta Information"
+        fields:
+          - source: persona_table
+            name: status
+            label: "Status"
+            type: single_select
+            mandatory: true
+            defaultValue: DRAFT
+            options:
+              - value: DRAFT
+                label: "Draft"
+              - value: ACTIVE
+                label: "Active"
+              - value: ARCHIVED
+                label: "Archived"
