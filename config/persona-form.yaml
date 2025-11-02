@@ -276,6 +276,118 @@ pages:
             type: single_select
             mandatory: true
             helperText: "To add."
+  - id: ai-settings
+    title: "AI Configuration"
+    description: "Configure AI providers and models for content generation and voice synthesis"
+    fieldGroups:
+      - id: content-generation
+        title: "Content Generation"
+        description: "Choose the AI provider and model for generating debate content, teasers, and descriptions"
+        fields:
+          - source: persona_table
+            name: contentProvider
+            label: "Content Provider"
+            type: single_select
+            mandatory: false
+            defaultValue: OPENAI
+            helperText: "AI provider to use for generating debate content and text"
+            options:
+              - value: OPENAI
+                label: "OpenAI"
+              - value: ANTHROPIC
+                label: "Anthropic (Claude)"
+              - value: GOOGLE
+                label: "Google (Gemini)"
+          - source: persona_table
+            name: contentModel
+            label: "Content Model"
+            type: single_select
+            mandatory: false
+            defaultValue: "gpt-4o"
+            helperText: "Specific AI model to use for content generation"
+            options:
+              - value: "gpt-4o"
+                label: "GPT-4o (Latest)"
+              - value: "gpt-4-turbo"
+                label: "GPT-4 Turbo"
+              - value: "gpt-3.5-turbo"
+                label: "GPT-3.5 Turbo"
+              - value: "claude-3-5-sonnet-20241022"
+                label: "Claude 3.5 Sonnet"
+              - value: "claude-3-opus-20240229"
+                label: "Claude 3 Opus"
+              - value: "claude-3-haiku-20240307"
+                label: "Claude 3 Haiku"
+              - value: "gemini-1.5-pro"
+                label: "Gemini 1.5 Pro"
+              - value: "gemini-1.5-flash"
+                label: "Gemini 1.5 Flash"
+          - source: persona_table
+            name: aiTemperature
+            label: "Temperature"
+            type: number
+            mandatory: false
+            defaultValue: 0.8
+            helperText: "Controls randomness (0=deterministic, 1=creative). Default: 0.8"
+            validation:
+              min: 0
+              max: 1
+          - source: persona_table
+            name: aiMaxTokens
+            label: "Max Tokens"
+            type: number
+            mandatory: false
+            defaultValue: 2000
+            helperText: "Maximum length of generated responses. Default: 2000"
+            validation:
+              min: 100
+              max: 4000
+      - id: image-generation
+        title: "Image Generation"
+        description: "Choose the AI provider and model for generating persona avatars and images"
+        fields:
+          - source: persona_table
+            name: imageProvider
+            label: "Image Provider"
+            type: single_select
+            mandatory: false
+            defaultValue: OPENAI
+            helperText: "AI provider to use for generating avatar images"
+            options:
+              - value: OPENAI
+                label: "OpenAI (DALL-E)"
+          - source: persona_table
+            name: imageModel
+            label: "Image Model"
+            type: single_select
+            mandatory: false
+            defaultValue: "dall-e-3"
+            helperText: "Specific image generation model to use"
+            options:
+              - value: "dall-e-3"
+                label: "DALL-E 3"
+              - value: "dall-e-2"
+                label: "DALL-E 2"
+      - id: voice-synthesis
+        title: "Voice Synthesis"
+        description: "Configure voice provider for debate audio generation"
+        fields:
+          - source: persona_table
+            name: voiceProvider
+            label: "Voice Provider"
+            type: single_select
+            mandatory: false
+            defaultValue: ELEVENLABS
+            helperText: "Provider for voice synthesis"
+            options:
+              - value: ELEVENLABS
+                label: "ElevenLabs"
+          - source: persona_table
+            name: voiceModel
+            label: "Voice Model/ID"
+            type: text
+            mandatory: false
+            helperText: "Specific voice ID or configuration (optional)"
   - id: settings
     title: "Settings"
     description: "Persona status and metadata"

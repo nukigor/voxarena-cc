@@ -91,6 +91,15 @@ export async function POST(request: NextRequest) {
           professionRole: personaData.professionRole || null,
           quirks: personaData.quirks || null,
           status: personaData.status || 'DRAFT',
+          // AI Configuration
+          contentProvider: personaData.contentProvider || 'OPENAI',
+          contentModel: personaData.contentModel || 'gpt-4o',
+          imageProvider: personaData.imageProvider || 'OPENAI',
+          imageModel: personaData.imageModel || 'dall-e-3',
+          voiceProvider: personaData.voiceProvider || 'ELEVENLABS',
+          voiceModel: personaData.voiceModel || null,
+          aiTemperature: personaData.aiTemperature !== undefined ? personaData.aiTemperature : 0.8,
+          aiMaxTokens: personaData.aiMaxTokens !== undefined ? personaData.aiMaxTokens : 2000,
         },
       })
 
@@ -152,7 +161,9 @@ export async function POST(request: NextRequest) {
           taxonomyTermIdsMap,
           enrichedConfig,
           persona.id,
-          persona.name
+          persona.name,
+          persona.imageProvider || 'OPENAI',
+          persona.imageModel || 'dall-e-3'
         )
 
         // Process image (resize and optimize)
@@ -195,7 +206,11 @@ export async function POST(request: NextRequest) {
           personaData,
           persona.taxonomyValues,
           persona.id,
-          persona.name
+          persona.name,
+          persona.contentProvider || 'OPENAI',
+          persona.contentModel || 'gpt-4o',
+          persona.aiTemperature || 0.5,
+          30
         )
 
         // Update persona with generated teaser
@@ -232,7 +247,11 @@ export async function POST(request: NextRequest) {
           personaData,
           persona.taxonomyValues,
           persona.id,
-          persona.name
+          persona.name,
+          persona.contentProvider || 'OPENAI',
+          persona.contentModel || 'gpt-4o',
+          persona.aiTemperature || 0.8,
+          persona.aiMaxTokens || 500
         )
 
         // Update persona with generated description

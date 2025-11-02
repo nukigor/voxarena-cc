@@ -68,7 +68,9 @@ export async function POST(
       taxonomyTermIdsMap,
       enrichedConfig,
       persona.id,
-      persona.name
+      persona.name,
+      persona.imageProvider || 'OPENAI',
+      persona.imageModel || 'dall-e-3'
     )
 
     // Process image (resize and optimize)
@@ -83,9 +85,13 @@ export async function POST(
     const teaser = await generatePersonaTeaser(
       personaData,
       persona.taxonomyValues,
-          persona.id,
-          persona.name
-        )
+      persona.id,
+      persona.name,
+      persona.contentProvider || 'OPENAI',
+      persona.contentModel || 'gpt-4o',
+      persona.aiTemperature || 0.5,
+      2500  // Optimized for Gemini 2.x: ~1800 thinking tokens + ~700 output buffer
+    )
     console.log('Teaser regenerated successfully:', teaser)
 
     // Generate description
@@ -93,9 +99,13 @@ export async function POST(
     const description = await generatePersonaDescription(
       personaData,
       persona.taxonomyValues,
-          persona.id,
-          persona.name
-        )
+      persona.id,
+      persona.name,
+      persona.contentProvider || 'OPENAI',
+      persona.contentModel || 'gpt-4o',
+      persona.aiTemperature || 0.8,
+      Math.max(persona.aiMaxTokens || 500, 3000)  // Use persona setting or 3000 minimum for Gemini 2.x thinking tokens
+    )
     console.log('Description regenerated successfully:', description.substring(0, 100) + '...')
 
     // Update persona with all regenerated content

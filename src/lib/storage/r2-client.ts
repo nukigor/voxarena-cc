@@ -1,5 +1,7 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
+import https from "https";
 
 // Initialize R2 client (S3-compatible)
 const r2Client = new S3Client({
@@ -9,6 +11,12 @@ const r2Client = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
   },
+  // Configure HTTPS agent to handle certificate issues in development
+  requestHandler: new NodeHttpHandler({
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: process.env.NODE_ENV === 'production',
+    }),
+  }),
 });
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME || "";

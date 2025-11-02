@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(killall:*)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)",
+      "Bash(npx tsx:*)",
+      "Bash(awk:*)",
+      "Bash(node discover-google-models.js:*)",
+      "Bash(sudo killall -9 node npm)",
+      "Bash(xargs ps:*)"
     ],
     "deny": [],
     "ask": []

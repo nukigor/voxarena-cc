@@ -35,7 +35,7 @@ interface LogPromptParams {
   parentObjectId: string
   parentObjectName: string
   parentObjectSlug?: string
-  aiModel: AiModel
+  aiModel: string  // Accept any model string (not limited to AiModel enum)
   prompt: string
   promptExplanation: string
   result?: string

@@ -154,7 +154,7 @@ export async function buildAvatarPrompt(
 }
 
 /**
- * Generates a persona avatar using OpenAI DALL-E 3
+ * Generates a persona avatar using configured image provider
  * @returns Buffer containing the generated image
  */
 export async function generatePersonaAvatar(
@@ -162,7 +162,9 @@ export async function generatePersonaAvatar(
   taxonomyTermIds: TaxonomyTermIds,
   config: PersonaFormConfig,
   personaId?: string,
-  personaName?: string
+  personaName?: string,
+  imageProvider: string = 'OPENAI',
+  imageModel: string = 'dall-e-3'
 ): Promise<Buffer> {
   const startTime = Date.now()
   let finalPrompt = ''
@@ -177,14 +179,20 @@ export async function generatePersonaAvatar(
     wasCondensed = fullPrompt.length > 3900
 
     console.log('Generating avatar with final prompt:', finalPrompt)
+    console.log(`Using image provider: ${imageProvider}, model: ${imageModel}`)
 
-    // Generate image using DALL-E 3
+    // Only OpenAI is supported for now
+    if (imageProvider !== 'OPENAI') {
+      throw new Error(`Unsupported image provider: ${imageProvider}. Only OPENAI is currently supported.`)
+    }
+
+    // Generate image using configured model
     const response = await openai.images.generate({
-      model: 'dall-e-3',
+      model: imageModel as 'dall-e-3' | 'dall-e-2',
       prompt: finalPrompt,
       n: 1,
       size: '1024x1024',
-      quality: 'standard',
+      quality: imageModel === 'dall-e-3' ? 'standard' : undefined, // quality only supported in DALL-E 3
       response_format: 'url',
     })
 

@@ -2,10 +2,11 @@
 
 import React from 'react'
 import { FieldConfig } from '@/types/persona-form-config'
-import { UseFormRegister, FieldErrors, Control, Controller } from 'react-hook-form'
+import { UseFormRegister, FieldErrors, Control, Controller, useWatch } from 'react-hook-form'
 import { ChevronDownIcon, ChevronUpDownIcon } from '@heroicons/react/16/solid'
 import { InformationCircleIcon, XMarkIcon, CheckIcon } from '@heroicons/react/20/solid'
 import { Popover, PopoverButton, PopoverPanel, Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react'
+import { useAiModels } from '@/hooks/use-ai-models'
 
 interface DynamicFieldProps {
   field: FieldConfig
@@ -28,6 +29,30 @@ export function DynamicField({
 }: DynamicFieldProps) {
   const error = errors[field.name]
   const fieldId = `field-${field.name}`
+
+  // For contentModel field, fetch text models dynamically based on selected provider
+  const isContentModelField = field.name === 'contentModel'
+  const contentProvider = useWatch({
+    control,
+    name: 'contentProvider',
+    disabled: !isContentModelField || !control,
+  })
+  const { models: contentModels, loading: contentModelsLoading, error: contentModelsError } = useAiModels(
+    isContentModelField ? contentProvider : null,
+    'text'
+  )
+
+  // For imageModel field, fetch image models dynamically based on selected provider
+  const isImageModelField = field.name === 'imageModel'
+  const imageProvider = useWatch({
+    control,
+    name: 'imageProvider',
+    disabled: !isImageModelField || !control,
+  })
+  const { models: imageModels, loading: imageModelsLoading, error: imageModelsError } = useAiModels(
+    isImageModelField ? imageProvider : null,
+    'image'
+  )
 
   // Build validation rules
   const validationRules: any = {
@@ -93,6 +118,21 @@ export function DynamicField({
           />
         )}
 
+        {field.type === 'number' && (
+          <input
+            {...register(field.name, {
+              ...validationRules,
+              valueAsNumber: true,
+            })}
+            id={fieldId}
+            type="number"
+            step={field.name === 'aiTemperature' ? '0.1' : '1'}
+            min={field.validation?.min}
+            max={field.validation?.max}
+            className={baseInputClasses}
+          />
+        )}
+
         {field.type === 'textarea' && (
           <textarea
             {...register(field.name, validationRules)}
@@ -107,14 +147,49 @@ export function DynamicField({
             <select
               {...register(field.name, validationRules)}
               id={fieldId}
-              className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 border border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 sm:text-sm/6 dark:bg-white/5 dark:text-white dark:border-white/10 dark:*:bg-gray-800 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+              disabled={(isContentModelField && contentModelsLoading) || (isImageModelField && imageModelsLoading)}
+              className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 border border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 sm:text-sm/6 dark:bg-white/5 dark:text-white dark:border-white/10 dark:*:bg-gray-800 dark:focus:border-indigo-500 dark:focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">Select {field.label}</option>
-              {field.options?.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              <option value="">
+                {(isContentModelField && contentModelsLoading) || (isImageModelField && imageModelsLoading)
+                  ? 'Loading models...'
+                  : isContentModelField && !contentProvider
+                  ? 'Select a provider first'
+                  : isImageModelField && !imageProvider
+                  ? 'Select a provider first'
+                  : `Select ${field.label}`
+                }
+              </option>
+              {isContentModelField || isImageModelField ? (
+                // Dynamic models from API
+                (() => {
+                  // Ensure current value is always included, even if not in fetched models yet
+                  const currentValue = value;
+                  const models = [...(isContentModelField ? contentModels : imageModels)];
+
+                  // If there's a current value and it's not in the fetched models, add it
+                  if (currentValue && !models.find(m => m.id === currentValue)) {
+                    models.unshift({
+                      id: currentValue,
+                      name: currentValue,
+                      description: '(Previously selected)',
+                    });
+                  }
+
+                  return models.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name} {model.description ? `- ${model.description}` : ''}
+                    </option>
+                  ));
+                })()
+              ) : (
+                // Static options from config
+                field.options?.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))
+              )}
             </select>
             <ChevronDownIcon
               aria-hidden="true"
@@ -439,6 +514,14 @@ export function DynamicField({
         </div>
       )}
 
+      {/* Model fetching error for contentModel or imageModel fields */}
+      {((isContentModelField && contentModelsError) || (isImageModelField && imageModelsError)) && (
+        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+          {isContentModelField ? contentModelsError : imageModelsError}
+        </p>
+      )}
+
+      {/* Form validation error */}
       {error && (
         <p className="mt-2 text-sm text-red-600 dark:text-red-400">
           {error.message as string}

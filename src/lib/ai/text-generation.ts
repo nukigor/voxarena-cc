@@ -1,11 +1,7 @@
-import OpenAI from 'openai'
 import { logAiPrompt, buildTeaserPromptExplanation, buildDescriptionPromptExplanation } from '@/lib/ai/prompt-logger'
 import { AiPromptFunctionality, AiPromptParentModel, AiModel } from '@/types/ai-prompt-log'
-import { AiPromptStatus } from '@prisma/client'
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+import { AiPromptStatus, AiProvider as PrismaAiProvider } from '@prisma/client'
+import { getAiProvider } from '@/lib/ai/providers/factory'
 
 interface PersonaData {
   [key: string]: any
@@ -80,14 +76,18 @@ function buildDescriptionPrompt(
 }
 
 /**
- * Generates a captivating persona description using OpenAI GPT-4o
+ * Generates a captivating persona description using configured AI provider
  * @returns Generated description text (2-3 paragraphs, 200-300 words)
  */
 export async function generatePersonaDescription(
   personaData: PersonaData,
   taxonomyValues: TaxonomyValue[],
   personaId?: string,
-  personaName?: string
+  personaName?: string,
+  contentProvider: PrismaAiProvider = 'OPENAI',
+  contentModel: string = 'gpt-4o',
+  temperature: number = 0.8,
+  maxTokens: number = 500
 ): Promise<string> {
   const startTime = Date.now()
   let characteristicsPrompt = ''
@@ -97,6 +97,7 @@ export async function generatePersonaDescription(
     characteristicsPrompt = buildDescriptionPrompt(personaData, taxonomyValues)
 
     console.log('Generating persona description with characteristics:', characteristicsPrompt)
+    console.log(`Using content provider: ${contentProvider}, model: ${contentModel}`)
 
     const systemPrompt = `You are an expert writer crafting compelling persona descriptions for VoxArena, a debate platform. Your task is to create captivating, well-rounded persona descriptions that make users want to choose this persona for upcoming debates.
 
@@ -121,26 +122,20 @@ ${characteristicsPrompt}
 
 Remember: 2-3 paragraphs, 200-300 words, engaging and debate-focused. Make them irresistible for debates!`
 
-    // Generate description using GPT-4o
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: userPrompt,
-        },
-      ],
-      temperature: 0.8, // Higher temperature for more creative, varied output
-      max_tokens: 500, // Enough for 200-300 words
+    // Get AI provider and generate description
+    const provider = getAiProvider(contentProvider)
+    const response = await provider.generate({
+      provider: contentProvider,
+      model: contentModel,
+      prompt: userPrompt,
+      systemPrompt: systemPrompt,
+      temperature,
+      maxTokens,
     })
 
-    const description = response.choices[0]?.message?.content?.trim()
+    const description = response.content?.trim()
     if (!description) {
-      throw new Error('No description returned from OpenAI')
+      throw new Error(`No description returned from ${contentProvider}`)
     }
 
     console.log(`Generated description: ${description.length} characters`)
@@ -156,7 +151,7 @@ Remember: 2-3 paragraphs, 200-300 words, engaging and debate-focused. Make them 
         parentModel: AiPromptParentModel.PERSONA,
         parentObjectId: personaId,
         parentObjectName: personaName,
-        aiModel: AiModel.GPT_4O,
+        aiModel: contentModel,
         prompt: `SYSTEM:\n${systemPrompt}\n\nUSER:\n${userPrompt}`,
         promptExplanation,
         result: description,
@@ -180,7 +175,7 @@ Remember: 2-3 paragraphs, 200-300 words, engaging and debate-focused. Make them 
         parentModel: AiPromptParentModel.PERSONA,
         parentObjectId: personaId,
         parentObjectName: personaName,
-        aiModel: AiModel.GPT_4O,
+        aiModel: contentModel,
         prompt: characteristicsPrompt || 'Failed before prompt generation',
         promptExplanation: 'Description generation failed',
         result: '',
@@ -255,14 +250,18 @@ function buildTeaserPrompt(
 }
 
 /**
- * Generates an ultra-short, punchy teaser for a persona card using OpenAI GPT-4o
+ * Generates an ultra-short, punchy teaser for a persona card using configured AI provider
  * @returns Generated teaser text (maximum 8 words)
  */
 export async function generatePersonaTeaser(
   personaData: PersonaData,
   taxonomyValues: TaxonomyValue[],
   personaId?: string,
-  personaName?: string
+  personaName?: string,
+  contentProvider: PrismaAiProvider = 'OPENAI',
+  contentModel: string = 'gpt-4o',
+  temperature: number = 0.5,
+  maxTokens: number = 30
 ): Promise<string> {
   const startTime = Date.now()
   let characteristicsPrompt = ''
@@ -272,6 +271,7 @@ export async function generatePersonaTeaser(
     characteristicsPrompt = buildTeaserPrompt(personaData, taxonomyValues)
 
     console.log('Generating persona teaser with characteristics:', characteristicsPrompt)
+    console.log(`Using content provider: ${contentProvider}, model: ${contentModel}`)
 
     const systemPrompt = `You are an expert copywriter crafting ultra-short, punchy teasers for VoxArena persona cards. Your task is to capture what makes this persona compelling for DEBATES.
 
@@ -321,26 +321,20 @@ What STANCE or PERSPECTIVE do they bring to debates? What would they ARGUE or CH
 
 Remember: Maximum 8 words. Focus on debate perspective, NOT job title.`
 
-    // Generate teaser using GPT-4o
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: userPrompt,
-        },
-      ],
-      temperature: 0.5, // Moderate temperature for focused but creative output
-      max_tokens: 30, // More than enough for 8 words
+    // Get AI provider and generate teaser
+    const provider = getAiProvider(contentProvider)
+    const response = await provider.generate({
+      provider: contentProvider,
+      model: contentModel,
+      prompt: userPrompt,
+      systemPrompt: systemPrompt,
+      temperature,
+      maxTokens,
     })
 
-    let teaser = response.choices[0]?.message?.content?.trim()
+    let teaser = response.content?.trim()
     if (!teaser) {
-      throw new Error('No teaser returned from OpenAI')
+      throw new Error(`No teaser returned from ${contentProvider}`)
     }
 
     // Remove quotation marks from the teaser (both single and double)
@@ -365,7 +359,7 @@ Remember: Maximum 8 words. Focus on debate perspective, NOT job title.`
         parentModel: AiPromptParentModel.PERSONA,
         parentObjectId: personaId,
         parentObjectName: personaName,
-        aiModel: AiModel.GPT_4O,
+        aiModel: contentModel,
         prompt: `SYSTEM:\n${systemPrompt}\n\nUSER:\n${userPrompt}`,
         promptExplanation,
         result: teaser,
@@ -389,7 +383,7 @@ Remember: Maximum 8 words. Focus on debate perspective, NOT job title.`
         parentModel: AiPromptParentModel.PERSONA,
         parentObjectId: personaId,
         parentObjectName: personaName,
-        aiModel: AiModel.GPT_4O,
+        aiModel: contentModel,
         prompt: characteristicsPrompt || 'Failed before prompt generation',
         promptExplanation: 'Teaser generation failed',
         result: '',

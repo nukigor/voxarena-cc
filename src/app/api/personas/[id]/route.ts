@@ -70,6 +70,32 @@ export async function PUT(
         status: personaData.status,
       }
 
+      // AI Configuration - only update if provided in the data
+      if (personaData.contentProvider !== undefined) {
+        updateData.contentProvider = personaData.contentProvider
+      }
+      if (personaData.contentModel !== undefined) {
+        updateData.contentModel = personaData.contentModel
+      }
+      if (personaData.imageProvider !== undefined) {
+        updateData.imageProvider = personaData.imageProvider
+      }
+      if (personaData.imageModel !== undefined) {
+        updateData.imageModel = personaData.imageModel
+      }
+      if (personaData.voiceProvider !== undefined) {
+        updateData.voiceProvider = personaData.voiceProvider
+      }
+      if (personaData.voiceModel !== undefined) {
+        updateData.voiceModel = personaData.voiceModel || null
+      }
+      if (personaData.aiTemperature !== undefined) {
+        updateData.aiTemperature = personaData.aiTemperature
+      }
+      if (personaData.aiMaxTokens !== undefined) {
+        updateData.aiMaxTokens = personaData.aiMaxTokens
+      }
+
       // Only update teaser if not regenerating AND teaser is provided in the data
       // If teaser is undefined (not in form), preserve the existing value
       if (!generateTeaser && personaData.teaser !== undefined) {
@@ -154,7 +180,9 @@ export async function PUT(
           taxonomyTermIdsMap,
           enrichedConfig,
           persona.id,
-          persona.name
+          persona.name,
+          persona.imageProvider || 'OPENAI',
+          persona.imageModel || 'dall-e-3'
         )
 
         // Process image (resize and optimize)
@@ -197,7 +225,11 @@ export async function PUT(
           personaData,
           persona.taxonomyValues,
           persona.id,
-          persona.name
+          persona.name,
+          persona.contentProvider || 'OPENAI',
+          persona.contentModel || 'gpt-4o',
+          persona.aiTemperature || 0.5,
+          30
         )
 
         // Update persona with generated teaser
@@ -234,7 +266,11 @@ export async function PUT(
           personaData,
           persona.taxonomyValues,
           persona.id,
-          persona.name
+          persona.name,
+          persona.contentProvider || 'OPENAI',
+          persona.contentModel || 'gpt-4o',
+          persona.aiTemperature || 0.8,
+          persona.aiMaxTokens || 500
         )
 
         // Update persona with generated description

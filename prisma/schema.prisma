@@ -72,6 +72,17 @@ model Persona {
   professionRole  String?  @db.Text
   quirks          String?  @db.Text
   status          PersonaStatus @default(DRAFT)
+
+  // AI Provider Configuration
+  contentProvider    AiProvider?      @default(OPENAI)
+  contentModel       String?          @default("gpt-4o")
+  imageProvider      ImageProvider?   @default(OPENAI)
+  imageModel         String?          @default("dall-e-3")
+  voiceProvider      VoiceProvider?   @default(ELEVENLABS)
+  voiceModel         String?          // Voice ID or configuration
+  aiTemperature      Float?           @default(0.8)
+  aiMaxTokens        Int?             @default(2000)
+
   createdBy       String?  // User ID (future implementation)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -81,6 +92,8 @@ model Persona {
 
   @@index([status])
   @@index([createdBy])
+  @@index([contentProvider])
+  @@index([imageProvider])
   @@map("personas")
 }
 
@@ -103,6 +116,20 @@ enum PersonaStatus {
   DRAFT
   ACTIVE
   ARCHIVED
+}
+
+enum AiProvider {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+}
+
+enum VoiceProvider {
+  ELEVENLABS
+}
+
+enum ImageProvider {
+  OPENAI
 }
 
 // ============================================================================
